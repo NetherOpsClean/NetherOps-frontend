@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 @font-face {
-  font-family: 'Pixelify Sans';
+  font-family: "Pixelify Sans";
   /* Si el archivo descargado tiene otro nombre, asegúrate de que coincida aquí */
-  src: url('/fonts/PixelifySans-VariableFont_wght.ttf') format('truetype');
+  src: url("/fonts/PixelifySans-VariableFont_wght.ttf") format("truetype");
   font-weight: 400 700; /* Soporta el rango de pesos de la variable font */
   font-style: normal;
   font-display: swap;
