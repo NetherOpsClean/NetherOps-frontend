@@ -16,6 +16,7 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "react-router";
+import { loginUser } from "@/service/AuthService";
 
 const loginSchema = z.object({
   email: z
@@ -37,10 +38,13 @@ export default function LoginForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof loginSchema>) {
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
-    console.log("Login data:", values);
-    alert(`Trying to log in with: ${values.email}`);
+    try {
+    await loginUser(values);
+    } catch (error) {
+      
+    }
   }
 
   return (
