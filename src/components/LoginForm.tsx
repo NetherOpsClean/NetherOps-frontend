@@ -18,6 +18,7 @@ import { useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { loginUser } from "@/service/AuthService";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z
@@ -49,12 +50,12 @@ export default function LoginForm() {
 
       if (response && response.accessToken) {
         login(response.accessToken);
-
+        toast.success("¡Bienvenido de vuelta!");
         navigate("/dashboard");
       }
     } catch (error) {
       console.error("Error en el login:", error);
-      alert("Error al iniciar sesión. Verifica tus credenciales.");
+      toast.error("Credenciales incorrectas. Verifica tu correo y contraseña.");
     } finally {
       setIsLoading(false);
     }

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { NavLink, useNavigate } from "react-router";
+import {  NavLink, useNavigate } from "react-router";
 import * as z from "zod";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -9,6 +9,7 @@ import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
 import { Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
 import { registerUser } from "@/service/AuthService";
+import { toast } from "sonner";
 
 const registerschema = z
   .object({
@@ -16,7 +17,9 @@ const registerschema = z
     email: z
       .email({ message: "Must be a valid email address." })
       .min(1, { message: "Email  is requered" }),
-    password: z.string().min(8, { message: "password must be at least 8 chaacteres long." }),
+    password: z
+      .string()
+      .min(8, { message: "password must be at least 8 chaacteres long." }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -40,21 +43,17 @@ export default function RegisterForm() {
   async function onSubmit(values: z.infer<typeof registerschema>) {
     setIsloading(true);
     try {
+      
       const { confirmPassword, ...registerData } = values;
+
       await registerUser(registerData);
 
-      alert("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.");
+      toast.success("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.");
       navigate("/login");
-    } catch (error: any) {
-      // === CAMBIO AQUÍ PARA VER EL ERROR REAL ===
-      console.error("Error completo del backend:", error.response?.data);
 
-      // Extraemos el mensaje de NestJS si existe
-      const errorMessage = error.response?.data?.message
-        ? JSON.stringify(error.response.data.message)
-        : "Hubo un error al crear la cuenta.";
-
-      alert(`Error del servidor: ${errorMessage}`);
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      toast.error("Hubo un error al crear la cuenta. Inténtalo de nuevo.");
     } finally {
       setIsloading(false);
     }
@@ -69,7 +68,9 @@ export default function RegisterForm() {
       <Card className="w-full max-w-md bg-card border-border shadow-2xl">
         <CardHeader className="space-y-1">
           {/* Usamos text-center para centrar el título y la descripción como en tu imagen */}
-          <CardTitle className="text-2xl font-semibold tracking-tight">Sign Up</CardTitle>
+          <CardTitle className="text-2xl font-semibold tracking-tight">
+            Sign Up
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
             Create your free NetherOps account.
           </CardDescription>
@@ -85,7 +86,12 @@ export default function RegisterForm() {
                   control={form.control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel htmlFor="name">Username</FieldLabel>
+                      <FieldLabel
+                        htmlFor="name"
+                        
+                      >
+                        Username
+                      </FieldLabel>
                       <div className="relative">
                         {/* Icono posicionado absolutamente a la izquierda */}
 
@@ -108,7 +114,12 @@ export default function RegisterForm() {
                   control={form.control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel htmlFor="email">Email Address</FieldLabel>
+                      <FieldLabel
+                        htmlFor="email"
+                        
+                      >
+                        Email Address
+                      </FieldLabel>
                       <div className="relative">
                         <Input
                           {...field}
@@ -132,7 +143,12 @@ export default function RegisterForm() {
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
+                        <FieldLabel
+                          htmlFor="password"
+                          
+                        >
+                          Password
+                        </FieldLabel>
                         <div className="relative">
                           <Input
                             {...field}
@@ -154,8 +170,14 @@ export default function RegisterForm() {
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
+                        <FieldLabel
+                          htmlFor="confirmPassword"
+                          
+                        >
+                          Confirm Password
+                        </FieldLabel>
                         <div className="relative">
+                          
                           <Input
                             {...field}
                             id="confirmPassword"
