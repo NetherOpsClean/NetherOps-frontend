@@ -1,18 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { data, NavLink } from "react-router";
+import {  NavLink, useNavigate } from "react-router";
 import * as z from "zod";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
-import { Checkbox } from "radix-ui";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Input } from "./ui/input";
+import { registerUser } from "@/service/AuthService";
+import { toast } from "sonner";
 
 const registerschema = z
   .object({
-    username: z.string().min(1, { message: "username is required." }),
+    name: z.string().min(1, { message: "username is required." }),
     email: z
       .email({ message: "Must be a valid email address." })
       .min(1, { message: "Email  is requered" }),
@@ -28,19 +29,34 @@ const registerschema = z
 
 export default function RegisterForm() {
   const [isLoading, setIsloading] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof registerschema>>({
     resolver: zodResolver(registerschema),
     defaultValues: {
-      username: "",
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof registerschema>) {
+  async function onSubmit(values: z.infer<typeof registerschema>) {
     setIsloading(true);
-    console.log("se envio la info");
+    try {
+      
+      const { confirmPassword, ...registerData } = values;
+
+      await registerUser(registerData);
+
+      toast.success("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.");
+      navigate("/login");
+
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      toast.error("Hubo un error al crear la cuenta. Inténtalo de nuevo.");
+    } finally {
+      setIsloading(false);
+    }
   }
 
   return (
@@ -66,12 +82,12 @@ export default function RegisterForm() {
               <FieldGroup className="space-y-4">
                 {/* CAMPO: USERNAME */}
                 <Controller
-                  name="username"
+                  name="name"
                   control={form.control}
                   render={({ field }) => (
                     <Field>
                       <FieldLabel
-                        htmlFor="username"
+                        htmlFor="name"
                         
                       >
                         Username
@@ -81,9 +97,9 @@ export default function RegisterForm() {
 
                         <Input
                           {...field}
-                          id="username"
+                          id="name"
                           autoComplete="off"
-                          placeholder="Enter username"
+                          placeholder="Enter name"
                           className="text-base bg-secondary/50" // pl-10 da espacio para el icono
                           required
                         />
