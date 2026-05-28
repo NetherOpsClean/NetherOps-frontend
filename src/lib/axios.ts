@@ -6,5 +6,6 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
-
+// https://netherops.orfrch.duckdns.org/api
+//http://localhost:3000/
 export default api;
