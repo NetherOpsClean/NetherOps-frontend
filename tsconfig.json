@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     // ... otras configuraciones
-    
+
     "paths": {
       "@/*": ["./src/*"]
     }

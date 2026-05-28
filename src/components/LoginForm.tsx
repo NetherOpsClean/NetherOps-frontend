@@ -15,8 +15,9 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "./ui/field";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import { loginUser } from "@/service/AuthService";
+import { useAuth } from "@/context/AuthContext";
 
 const loginSchema = z.object({
   email: z
@@ -30,6 +31,9 @@ const loginSchema = z.object({
 
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate(); // Hook para cambiar de página
+  const { login } = useAuth();
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,9 +45,18 @@ export default function LoginForm() {
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
     try {
-    await loginUser(values);
+      const response = await loginUser(values);
+
+      if (response && response.accessToken) {
+        login(response.accessToken);
+
+        navigate("/dashboard");
+      }
     } catch (error) {
-      
+      console.error("Error en el login:", error);
+      alert("Error al iniciar sesión. Verifica tus credenciales.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
