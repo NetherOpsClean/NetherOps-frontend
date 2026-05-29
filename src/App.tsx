@@ -9,6 +9,7 @@ import { Server } from "./pages/Server";
 import DashboardLayout from "./pages/DahboardLayout";
 import ConsolePage from "./pages/Console";
 import ServersList from "./pages/ServersList";
+import { UserAccess } from "./pages/UserAcces";
 
 function App() {
   return (
@@ -34,7 +35,7 @@ function App() {
               <Route index element={<Server />} />
               <Route path="console" element={<ConsolePage />} />
               <Route path="log" element={<div className="text-foreground p-6">Log View</div>} />
-              <Route path="players" element={<div className="text-foreground p-6">Players View</div>} />
+              <Route path="players" element={<UserAccess/>} />
               <Route path="software" element={<div className="text-foreground p-6">Software View</div>} />
               <Route path="files" element={<div className="text-foreground p-6">Files View</div>} />
               <Route path="settings" element={<div className="text-foreground p-6">Settings View</div>} />
