@@ -1,87 +1,123 @@
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useEffect, useState, useRef } from 'react';
+import { ServerService } from '@/service/ServerService';
 
-export default function ConsoleScreen() {
-  // Estado inicial con algunos logs de ejemplo de Minecraft
-  const [logs, setLogs] = useState<string[]>([
-    "[10:00:00] [Server thread/INFO]: Starting minecraft server version 1.20.4",
-    "[10:00:00] [Server thread/INFO]: Loading properties",
-    "[10:00:00] [Server thread/INFO]: Default game type: SURVIVAL",
-    "[10:00:00] [Server thread/INFO]: Generating keypair",
-    "[10:00:01] [Server thread/INFO]: Starting Minecraft server on *:25565",
-    "[10:00:02] [Server thread/INFO]: Preparing level \"world\"",
-    "[10:00:03] [Server thread/INFO]: Done (2.531s)! For help, type \"help\""
-  ]);
-  const [command, setCommand] = useState("");
+interface ConsoleProps {
+  serverId: string;
+  userId: string;
+}
+
+export default function ConsoleScreen({ serverId, userId }: ConsoleProps) {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [command, setCommand] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   
-  // Referencia para hacer scroll automático hacia abajo
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Cada vez que cambien los logs, hacemos scroll hacia el final
+  // Auto-scroll hacia abajo
   useEffect(() => {
-    scrollToBottom();
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  const handleSendCommand = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!command.trim()) return;
+  // Manejo de la conexión WebSocket
+  useEffect(() => {
+    const wsUrl = `ws://localhost:3000/console`; 
+    const ws = new WebSocket(wsUrl);
 
-    // Aquí irá tu lógica para enviar el comando por WebSockets a tu backend NestJS
-    // Por ahora, solo lo agregamos a la interfaz visualmente
-    setLogs(prev => [...prev, `> ${command}`]);
-    setCommand("");
+    ws.onopen = () => {
+      setIsConnected(true);
+      ws.send(JSON.stringify({
+        event: 'attach',
+        data: { serverId, userId }
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const response = JSON.parse(event.data);
+      
+      if (response.type === 'log' || response.type === 'info') {
+        setLogs((prev) => [...prev, response.data]);
+      } else if (response.type === 'error') {
+        setLogs((prev) => [...prev, `[ERROR] ${response.data}\n`]);
+      }
+    };
+
+    ws.onclose = () => {
+      setIsConnected(false);
+      setLogs((prev) => [...prev, '\n[Desconectado del servidor]']);
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket Error: ", error);
+      setIsConnected(false);
+    };
+
+    // Limpieza a prueba de React Strict Mode
+    return () => {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    };
+    
+  }, [serverId, userId]);
+
+  // Enviar comandos
+  const handleSendCommand = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!command.trim() || !isConnected) return;
+
+    const cmdToSend = command;
+    setCommand(''); 
+
+    try {
+      await ServerService.sendCommand(serverId, cmdToSend);
+    } catch (error) {
+      console.error("Error enviando comando:", error);
+      setLogs(prev => [...prev, `\n[ERROR LOCAL] No se pudo enviar el comando '${cmdToSend}'\n`]);
+    }
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-background border rounded-lg overflow-hidden shadow-sm">
+    <div className="flex flex-col h-full min-h-[500px] w-full bg-[#0c0c0c] rounded-lg border border-gray-800 font-mono text-sm shadow-xl overflow-hidden">
       
-      {/* Cabecera de la consola */}
-      <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b">
-        <h2 className="text-sm font-semibold tracking-tight">Terminal del Servidor</h2>
+      {/* Header interno */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a1a] border-b border-gray-800 text-gray-300">
+        <span className="font-semibold text-xs tracking-wider uppercase">Terminal TTY</span>
         <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-          <span className="text-xs text-muted-foreground font-medium">Online</span>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]'}`}></div>
+          <span className="text-xs text-gray-400">{isConnected ? 'Conectado' : 'Desconectado'}</span>
         </div>
       </div>
 
-      {/* Área de Logs (Pantalla negra) */}
-      <div className="flex-1 overflow-y-auto bg-[#0c0c0c] p-4 font-mono text-sm text-zinc-300">
+      {/* Área de Logs */}
+      <div className="flex-1 p-4 overflow-y-auto text-green-400 break-all whitespace-pre-wrap leading-tight selection:bg-green-900 selection:text-white">
         {logs.map((log, index) => (
-          <div 
-            key={index} 
-            // Si el log es un comando enviado por el usuario, lo pintamos un poco diferente
-            className={`break-all whitespace-pre-wrap mb-1 leading-relaxed ${
-              log.startsWith('>') ? 'text-blue-400 font-semibold' : ''
-            }`}
-          >
-            {log}
-          </div>
+          <span key={index}>{log}</span>
         ))}
-        {/* Este div invisible es el objetivo para el auto-scroll */}
         <div ref={logsEndRef} />
       </div>
 
-      {/* Área de Input de comandos */}
-      <form onSubmit={handleSendCommand} className="flex gap-3 p-4 bg-muted/30 border-t">
-        <Input
+      {/* Input de Comandos */}
+      <form onSubmit={handleSendCommand} className="flex p-2 bg-[#1a1a1a] border-t border-gray-800 focus-within:bg-[#222222] transition-colors">
+        <span className="px-3 py-2 text-gray-500 select-none font-bold">{">"}</span>
+        <input
+          type="text"
           value={command}
           onChange={(e) => setCommand(e.target.value)}
-          placeholder="Escribe un comando... (ej. /gamemode creative)"
-          className="flex-1 font-mono bg-background"
+          disabled={!isConnected}
+          className="flex-1 bg-transparent text-gray-100 outline-none placeholder-gray-600 disabled:opacity-50"
+          placeholder="Escribe un comando..."
           autoComplete="off"
+          spellCheck="false"
         />
-        <Button type="submit" variant="default" className="font-semibold">
-          Ejecutar
-        </Button>
+        <button 
+          type="submit" 
+          disabled={!isConnected || !command.trim()}
+          className="px-4 py-1.5 ml-2 bg-white/10 hover:bg-white/20 text-white rounded text-xs font-semibold disabled:opacity-30 transition-all cursor-pointer"
+        >
+          EJECUTAR
+        </button>
       </form>
+      
     </div>
   );
 }

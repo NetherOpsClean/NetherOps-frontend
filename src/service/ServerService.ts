@@ -38,4 +38,13 @@ export const ServerService = {
     const response = await api.post(`/servers/${serverId}/stop`);
     return response.data;
   },
+
+  sendCommand: async (serverId: string, command: string): Promise<any> => {
+    try {
+      const response = await api.post(`/servers/${serverId}/command`, { command });
+      return response.data;
+    } catch (error) {
+      throw error; 
+    }
+  }
 };
