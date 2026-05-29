@@ -1,45 +1,31 @@
-import { useState } from "react";
-import { PlusSquare } from "lucide-react";
+import { Server as ServerIcon, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CreateServerModal } from "./CreateServerModal";
 
-export function DashboardEmptyState() {
-  // Estado para controlar cuándo se abre el modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+// Definimos que el componente recibe una función como propiedad
+interface DashboardEmptyStateProps {
+  onOpenCreate: () => void;
+}
 
+export function DashboardEmptyState({ onOpenCreate }: DashboardEmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-73px)] bg-background text-foreground px-4 text-center">
-      
-      <h1 className="text-5xl font-extrabold tracking-tight mb-4">
-        Your Server <br />Awaits
-      </h1>
-      
-      <p className="text-muted-foreground mb-10 max-w-md text-sm md:text-base">
-        Deploy your first minecraft server
-      </p>
-
-      <div className="relative p-2">
-        {/* Esquinas decorativas */}
-        <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-muted-foreground/50"></div>
-        <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-muted-foreground/50"></div>
-
-        {/* El botón ahora tiene un onClick clásico de React */}
-        <Button 
-          onClick={() => setIsModalOpen(true)}
-          size="lg" 
-          className="flex items-center gap-3 font-bold tracking-wider text-sm uppercase px-8 py-6 rounded-none transition-all hover:scale-105 cursor-pointer z-10 relative"
-        >
-          <PlusSquare className="w-5 h-5" />
-          Create your server
-        </Button>
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center border-2 border-dashed border-border rounded-xl bg-muted/10 animate-in fade-in zoom-in-95 duration-300">
+      <div className="bg-primary/10 p-5 rounded-full mb-6">
+        <ServerIcon className="w-12 h-12 text-primary" />
       </div>
-      
-      {/* El Modal vive aquí abajo, fuera del botón, escuchando la variable isModalOpen */}
-      <CreateServerModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-      />
-
+      <h2 className="text-2xl font-bold mb-3 text-foreground">
+        Aún no tienes servidores
+      </h2>
+      <p className="text-muted-foreground max-w-md mb-8">
+        Parece que eres nuevo por aquí. Empieza desplegando tu primer servidor de Minecraft en nuestra infraestructura o pide a un amigo que te dé acceso al suyo.
+      </p>
+      <Button 
+        size="lg" 
+        onClick={onOpenCreate} // <-- Ahora llama a la función para abrir el Modal
+        className="font-bold tracking-wide text-md px-8 py-6 h-auto transition-transform hover:scale-105"
+      >
+        <Plus className="w-5 h-5 mr-2" />
+        Crear mi primer servidor
+      </Button>
     </div>
   );
 }

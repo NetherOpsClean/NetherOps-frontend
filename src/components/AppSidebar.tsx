@@ -5,21 +5,29 @@ import {
   Users, 
   Cpu, 
   FolderOpen, 
-  Settings 
+  Settings,
+  Network // <-- Importamos este nuevo icono para el Hub
 } from "lucide-react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useParams } from "react-router"; // Asegúrate de usar react-router-dom
+interface SidebarProps {
+  servers: any[];
+  isLoading: boolean;
+}
 
-export function AppSidebar() {
+export function AppSidebar({ servers, isLoading }: SidebarProps) {
   const location = useLocation();
+  const { id } = useParams();
+  const serverId = id || "demo-server-123";
 
+  // Definición de ítems
   const navItems = [
-    { name: "Server", icon: Server, path: "/servers/demo-server-123" },
-    { name: "Console", icon: Terminal, path: "/servers/demo-server-123/console" },
-    { name: "Log", icon: FileText, path: "/servers/demo-server-123/log" },
-    { name: "Players", icon: Users, path: "/servers/demo-server-123/players" },
-    { name: "Software", icon: Cpu, path: "/servers/demo-server-123/software" },
-    { name: "Files", icon: FolderOpen, path: "/servers/demo-server-123/files" },
-    { name: "Settings", icon: Settings, path: "/servers/demo-server-123/settings" },
+    { name: "Server", icon: Server, path: `/servers/${serverId}` },
+    { name: "Console", icon: Terminal, path: `/servers/${serverId}/console` },
+    { name: "Log", icon: FileText, path: `/servers/${serverId}/log` },
+    { name: "Players", icon: Users, path: `/servers/${serverId}/players` },
+    { name: "Software", icon: Cpu, path: `/servers/${serverId}/software` },
+    { name: "Files", icon: FolderOpen, path: `/servers/${serverId}/files` },
+    { name: "Settings", icon: Settings, path: `/servers/${serverId}/settings` },
   ];
 
   return (
@@ -35,25 +43,57 @@ export function AppSidebar() {
       </div>
 
       {/* Menú de Navegación */}
-      <nav className="flex-1 mt-4 flex flex-col gap-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+      <nav className="flex-1 mt-4 flex flex-col gap-1 overflow-y-auto">
+        
+        {/* Siempre visible: Red de Servidores */}
+        <Link
+          to="/dashboard"
+          className={`flex items-center gap-4 px-6 py-3 text-sm font-semibold transition-colors ${
+            location.pathname === "/dashboard" 
+              ? "bg-primary/10 text-primary border-l-2 border-primary" 
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+          }`}
+        >
+          <Network className="w-5 h-5" />
+          Mis Servidores
+        </Link>
 
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center gap-4 px-6 py-3 text-sm font-semibold transition-colors ${
-                isActive 
-                  ? "bg-primary/10 text-primary border-l-2 border-primary" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </Link>
-          );
-        })}
+        {/* Separador */}
+        <div className="my-2 border-t border-border/50 mx-4"></div>
+
+        {/* --- LÓGICA DE VISUALIZACIÓN --- */}
+        {isLoading ? (
+          <div className="px-6 py-3 text-xs text-muted-foreground italic">Cargando...</div>
+        ) : servers.length > 0 ? (
+          <>
+            <div className="px-6 mb-2 mt-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+              Administrando: {serverId}
+            </div>
+
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`flex items-center gap-4 px-6 py-3 text-sm font-semibold transition-colors ${
+                    isActive 
+                      ? "bg-primary/10 text-primary border-l-2 border-primary" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-2 border-transparent"
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </>
+        ) : (
+          /* MENSAJE DE ESTADO VACÍO DENTRO DEL SIDEBAR */
+          <div className="px-6 py-4 text-xs text-muted-foreground border-l-2 border-transparent">
+            <p className="italic">No tienes servidores activos.</p>
+          </div>
+        )}
       </nav>
     </aside>
   );

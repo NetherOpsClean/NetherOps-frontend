@@ -2,15 +2,23 @@ import { useState } from "react";
 import { Link, useParams } from "react-router";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Power, Link as LinkIcon, Code, Users, Cpu, Square, Terminal } from "lucide-react";
+import { Play, Power, Link as LinkIcon, Code, Users, Cpu, Square, Terminal, Settings } from "lucide-react";
 
-export function Server() {
+export function OneServer() {
+  // Capturamos el ID del servidor desde la URL (ej. "srv-01")
   const { id } = useParams(); 
+
+  // Estados para simular interactividad
   const [status, setStatus] = useState<"OFFLINE" | "STARTING" | "ONLINE">("OFFLINE");
+  
+  // MOCK: Selector de rol para probar la interfaz. 
+  // En el futuro, esto vendrá del AuthContext o de la API
+  const [userRole, setUserRole] = useState<"OWNER" | "GUEST">("OWNER");
 
   const handleToggleServer = () => {
     if (status === "OFFLINE") {
       setStatus("STARTING");
+      // Simulamos el tiempo de arranque del contenedor
       setTimeout(() => setStatus("ONLINE"), 3500);
     } else if (status === "ONLINE") {
       setStatus("OFFLINE");
@@ -20,28 +28,53 @@ export function Server() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300 p-6">
       
-      {/* HEADER: Nombre del server y Botones */}
+      {/* HERRAMIENTA DE DESARROLLO: Borra este div cuando conectes tu backend */}
+      <div className="bg-yellow-500/10 border border-yellow-500/50 p-3 rounded flex items-center justify-between mb-4">
+        <span className="text-sm text-yellow-500 font-mono">Modo de prueba: Cambia tu rol para ver qué elementos se ocultan</span>
+        <div className="flex gap-2">
+          <Button size="sm" variant={userRole === 'OWNER' ? 'default' : 'outline'} onClick={() => setUserRole('OWNER')}>Soy Dueño</Button>
+          <Button size="sm" variant={userRole === 'GUEST' ? 'default' : 'outline'} onClick={() => setUserRole('GUEST')}>Soy Invitado</Button>
+        </div>
+      </div>
+
+      {/* HEADER: Nombre del server y Botones de acción */}
       <div className="flex items-center justify-between bg-card border border-border p-4 rounded-lg shadow-sm">
         <div className="flex items-center gap-4">
           <div className="bg-muted text-muted-foreground font-bold px-3 py-1 rounded text-sm border border-border">
-            {id || "S1"}
+            {id || "S1"} {/* Muestra el ID de la URL o "S1" por defecto */}
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-wide">MC_SERVER_01</h1>
-            <p className="text-xs text-muted-foreground font-mono mt-0.5">
+            <p className="text-xs text-muted-foreground font-mono mt-0.5 flex items-center gap-2">
               VERSION_ <span className="text-foreground">1.20.1 Vanilla</span>
+              {/* Etiqueta visual del rol actual */}
+              <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${userRole === 'OWNER' ? 'bg-primary/20 text-primary' : 'bg-blue-500/20 text-blue-500'}`}>
+                {userRole === 'OWNER' ? 'Dueño' : 'Invitado'}
+              </span>
             </p>
           </div>
         </div>
         
         <div className="flex gap-3">
-          {/* Botón hacia la consola */}
-          <Link to={`/servers/${id}/console`}>
-            <Button variant="outline" className="font-bold tracking-wider uppercase gap-2">
-              <Terminal className="w-4 h-4" /> Consola
-            </Button>
-          </Link>
+          {/* RENDERIZADO CONDICIONAL: El invitado NO ve la consola */}
+          {userRole === 'OWNER' && (
+            <Link to={`/servers/${id}/console`}>
+              <Button variant="outline" className="font-bold tracking-wider uppercase gap-2">
+                <Terminal className="w-4 h-4" /> Consola
+              </Button>
+            </Link>
+          )}
 
+          {/* RENDERIZADO CONDICIONAL: El invitado NO ve ajustes */}
+          {userRole === 'OWNER' && (
+            <Link to={`/servers/${id}/settings`}>
+              <Button variant="outline" className="font-bold tracking-wider uppercase gap-2">
+                <Settings className="w-4 h-4" /> Ajustes
+              </Button>
+            </Link>
+          )}
+
+          {/* Botón de arranque/apagado rápido: ESTE SÍ LO VEN TODOS */}
           {status === "OFFLINE" && (
             <Button onClick={handleToggleServer} variant="default" className="font-bold tracking-wider uppercase gap-2 bg-green-600 hover:bg-green-700 text-white">
               <Play className="w-4 h-4" /> Start
@@ -55,7 +88,7 @@ export function Server() {
         </div>
       </div>
 
-      {/* ESTADO PRINCIPAL (EL BOTÓN GIGANTE) */}
+      {/* ESTADO PRINCIPAL (DINÁMICO) */}
       <Card className="bg-card border-border text-center py-12 relative overflow-hidden shadow-sm">
         {status === "ONLINE" && <div className="absolute inset-0 bg-green-500/5 pointer-events-none" />}
         
@@ -73,9 +106,9 @@ export function Server() {
               {status}
             </h2>
             <p className="text-muted-foreground">
-              {status === "OFFLINE" && "Server is currently stopped and consuming no resources."}
-              {status === "STARTING" && "Provisioning container and allocating memory..."}
-              {status === "ONLINE" && "Server is running and accepting player connections."}
+              {status === "OFFLINE" && "El servidor está detenido y no consume recursos."}
+              {status === "STARTING" && "Provisionando contenedor y asignando memoria..."}
+              {status === "ONLINE" && "El servidor está en ejecución y aceptando jugadores."}
             </p>
           </div>
           
@@ -103,21 +136,27 @@ export function Server() {
 
       {/* GRID DE ESTADÍSTICAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Address Card */}
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2 tracking-widest">
-              <LinkIcon className="w-4 h-4" /> Address
+              <LinkIcon className="w-4 h-4" /> Dirección IP
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex justify-between items-center bg-background border border-border p-3 rounded">
               <code className={`font-mono text-sm ${status === 'ONLINE' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {status === "ONLINE" ? "mc.example.com:25565" : "---.---.---.---:-----"}
+                {status === "ONLINE" ? "mc.ejemplo.com:25565" : "---.---.---.---:-----"}
               </code>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                {/* Puedes poner un icono de copiar portapapeles aquí */}
+              </Button>
             </div>
           </CardContent>
         </Card>
 
+        {/* Software Card */}
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2 tracking-widest">
@@ -134,14 +173,18 @@ export function Server() {
                 <p className="text-xs text-muted-foreground">Version 1.20.1</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" className="text-xs tracking-wider">CHANGE</Button>
+            {/* Solo el dueño puede cambiar el software */}
+            {userRole === 'OWNER' && (
+              <Button variant="outline" size="sm" className="text-xs tracking-wider">CAMBIAR</Button>
+            )}
           </CardContent>
         </Card>
 
+        {/* Players Card */}
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2 tracking-widest">
-              <Users className="w-4 h-4" /> Players
+              <Users className="w-4 h-4" /> Jugadores
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -157,10 +200,11 @@ export function Server() {
           </CardContent>
         </Card>
 
+        {/* RAM Usage Card */}
         <Card className="bg-card border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-2 tracking-widest">
-              <Cpu className="w-4 h-4" /> RAM Usage
+              <Cpu className="w-4 h-4" /> Uso de RAM
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -175,6 +219,7 @@ export function Server() {
             </div>
           </CardContent>
         </Card>
+
       </div>
     </div>
   );

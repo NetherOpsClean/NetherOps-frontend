@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Server, Cpu, HardDrive, Gamepad2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,10 @@ import { ServerService } from "@/service/ServerService";
 import { type CreateServerRequest } from "@/types/request/CreateServerRequest";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { getNode } from "@/service/NodeService";
+import type { NodeResponse } from "@/types/response/NodeResponse";
+import type { TemplateResponse } from "@/types/response/TemplatesResponse";
+import { getTemplates } from "@/service/TemplatesService";
 
 interface CreateServerModalProps {
   isOpen: boolean;
@@ -34,20 +38,65 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth(); 
-  
+  const [nodes, setNodes] = useState<NodeResponse[]>([]);
+  const [isLoadingNodes, setIsLoadingNodes] = useState(false);
+  const [templates, setTemplates] = useState<TemplateResponse[]>([]);
   const [formData, setFormData] = useState({
     name: "",
+    nodeId: "", // <-- Agrega nodeId al estado inicial
     templateId: "vanilla-1.20.1",
+    // ... el resto de tu estado igual
     memoryLimitMb: 2048,
-    diskLimitMb: 10240,
     maxPlayers: 20,
-    gameMode: "survival",
-    difficulty: "normal",
+    gameMode: "SURVIVAL",
+    difficulty: "NORMAL",
     pvpEnabled: true,
     motd: "A NetherOps Server",
     cracked: false,
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      // Renombramos la función para que tenga más sentido ya que ahora trae más cosas
+      const fetchInitialData = async () => {
+        // Puedes usar un solo estado de carga para todo el modal, o mantener los tuyos separados
+        setIsLoadingNodes(true); 
+        // setIsLoadingTemplates(true); // (Si tienes un estado separado)
+
+        try {
+          // Promise.all ejecuta ambas llamadas a tu backend al mismo tiempo
+          const [availableNodes, availableTemplates] = await Promise.all([
+            getNode(),
+            getTemplates()
+          ]);
+
+          // Guardamos los resultados en sus respectivos estados
+          setNodes(availableNodes);
+          setTemplates(availableTemplates); // Asegúrate de tener este estado definido
+          
+          // Opcional: Seleccionar automáticamente el primer nodo de la lista
+          if (availableNodes.length > 0) {
+            handleChange("nodeId", availableNodes[0].id);
+          }
+          
+          // Opcional: Seleccionar el primer template también
+          // if (availableTemplates.length > 0) {
+          //   handleChange("templateId", availableTemplates[0].id);
+          // }
+
+        } catch (error) {
+          console.error("Error fetching initial data:", error);
+          toast.error("Error al cargar los nodos o templates disponibles.");
+        } finally {
+          setIsLoadingNodes(false);
+          // setIsLoadingTemplates(false);
+        }
+      };
+
+      fetchInitialData();
+    }
+  }, [isOpen]); 
+  
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -57,14 +106,13 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
     setIsLoading(true);
 
     try {
-      /*const createServerDto: CreateServerRequest = {
+    const createServerDto: CreateServerRequest = {
         name: formData.name,
-        // Usamos el ID del contexto de Auth, o quemas el de tu DB de Producción aquí para la prueba
         ownerId: user?.id || "ID_REAL_DE_TU_USUARIO", 
-        nodeId: "ID_REAL_DE_TU_NODO", 
+        nodeId: formData.nodeId, 
         templateId: formData.templateId,
         memoryLimitMb: Number(formData.memoryLimitMb),
-        diskLimitMb: Number(formData.diskLimitMb),
+        // diskLimitMb: Number(formData.diskLimitMb), <-- LO QUITAMOS
         configuration: {
           maxPlayers: Number(formData.maxPlayers),
           gameMode: formData.gameMode,
@@ -80,9 +128,8 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
       toast.success("Server provisioned successfully!");
       onClose();
       navigate(`/servers/${response.id}`); 
-      */
 
-      // === INICIO DE LA SIMULACIÓN (MOCK) ===
+    /*  // === INICIO DE LA SIMULACIÓN (MOCK) ===
       
       // 1. Simulamos que el backend está pensando durante 1.5 segundos
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -96,6 +143,7 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
       navigate(`/servers/${fakeServerId}`); 
       
       // === FIN DE LA SIMULACIÓN ===
+      */
     } catch (error: any) {
       console.error("Error creating server:", error);
       const errorMessage = error.response?.data?.message || "Failed to deploy infrastructure.";
@@ -105,8 +153,7 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+  return (<Dialog open={isOpen} onOpenChange={onClose}>
       {/* AQUÍ ESTÁ LA SOLUCIÓN AL TAMAÑO: max-h-[85vh] y overflow-y-auto */}
       <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto bg-background border-border text-foreground">
         
@@ -140,17 +187,63 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
                   required 
                 />
               </div>
+
+              {/* === SELECT DE NODOS === */}
               <div className="space-y-2">
-                <Label>Software / Template</Label>
-                <Select value={formData.templateId} onValueChange={(v) => handleChange("templateId", v)}>
+                <Label>Deployment Node</Label>
+                <Select 
+                  value={formData.nodeId} 
+                  onValueChange={(v) => handleChange("nodeId", v)}
+                  disabled={isLoadingNodes || nodes.length === 0}
+                >
                   <SelectTrigger className="bg-muted/50 border-border">
-                    <SelectValue placeholder="Select software" />
+                    <SelectValue 
+                      placeholder={isLoadingNodes ? "Cargando nodos..." : "Selecciona un nodo"} 
+                    />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border text-foreground">
-                    <SelectItem value="vanilla-1.20.1">Vanilla 1.20.1</SelectItem>
-                    <SelectItem value="paper-1.20.1">PaperMC 1.20.1</SelectItem>
+                    {nodes.length === 0 && !isLoadingNodes && (
+                      <SelectItem value="none" disabled>
+                        No hay nodos disponibles
+                      </SelectItem>
+                    )}
+                    {nodes.map((node) => (
+                      <SelectItem key={node.id} value={node.id}>
+                        {node.alias}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* === SELECT DE TEMPLATES (SOFTWARE) MODIFICADO === */}
+              <div className="space-y-2">
+                <Label>Software / Template</Label>
+               <Select 
+                value={formData.templateId} 
+                onValueChange={(value) => {
+                  console.log("Nuevo valor seleccionado:", value); // Verifica si esto aparece en tu consola
+                  handleChange("templateId", value);
+                }}
+                disabled={isLoadingNodes || templates.length === 0} 
+              >
+                <SelectTrigger className="bg-muted/50 border-border">
+                  <SelectValue placeholder="Select software">
+                    {/* Forzamos la búsqueda directamente aquí */}
+                    {formData.templateId 
+                      ? templates.find((t) => t.id === formData.templateId)?.alias || "Cargando..."
+                      : "Select software"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border text-foreground">
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.alias}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               </div>
             </div>
 
@@ -177,9 +270,10 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
                 <Select value={formData.gameMode} onValueChange={(v) => handleChange("gameMode", v)}>
                   <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-background border-border text-foreground">
-                    <SelectItem value="survival">Survival</SelectItem>
-                    <SelectItem value="creative">Creative</SelectItem>
-                    <SelectItem value="adventure">Adventure</SelectItem>
+                    <SelectItem value="SURVIVAL">Survival</SelectItem>
+                    <SelectItem value="CREATIVE">Creative</SelectItem>
+                    <SelectItem value="ADVENTURE">Adventure</SelectItem>
+                    <SelectItem value="SPECTATOR">Spectator</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -188,10 +282,10 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
                 <Select value={formData.difficulty} onValueChange={(v) => handleChange("difficulty", v)}>
                   <SelectTrigger className="bg-muted/50 border-border"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-background border-border text-foreground">
-                    <SelectItem value="peaceful">Peaceful</SelectItem>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
+                    <SelectItem value="PEACEFUL">Peaceful</SelectItem>
+                    <SelectItem value="EASY">Easy</SelectItem>
+                    <SelectItem value="NORMAL">Normal</SelectItem>
+                    <SelectItem value="HARD">Hard</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -249,16 +343,7 @@ export function CreateServerModal({ isOpen, onClose }: CreateServerModalProps) {
                   min={1024}
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><HardDrive className="w-3 h-3"/> Disk (MB)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.diskLimitMb}
-                  onChange={(e) => handleChange("diskLimitMb", e.target.value)}
-                  className="bg-muted/50 border-border"
-                  min={5120}
-                />
-              </div>
+              
             </div>
           </div>
 
