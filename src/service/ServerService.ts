@@ -22,5 +22,14 @@ export const ServerService = {
       // Puedes manejar logs adicionales aquí si lo deseas
       throw error; 
     }
+  },
+
+  addPlayerAccess: async (serverId: string, guestEmail: string): Promise<any> => {
+    try {
+      const response = await api.post(`/servers/${serverId}/users`, { guestEmail });
+      return response.data;
+    } catch (error) {
+      throw error; 
+    }
   }
 };
