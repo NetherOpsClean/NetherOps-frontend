@@ -1,14 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Server as ServerIcon, Activity, HardDrive, Play, Users, Plus, Loader2 } from "lucide-react";
+import {
+  Server as ServerIcon,
+  Activity,
+  HardDrive,
+  Play,
+  Users,
+  Plus,
+  Loader2,
+} from "lucide-react";
 import { CreateServerModal } from "@/components/CreateServerModal";
 import { ServerService } from "@/service/ServerService";
 import type { ServerResponse } from "@/types/response/ServerResponse"; // <-- IMPORTA EL TIPO REAL
+import { useAuth } from "@/context/AuthContext";
 
 export default function ServersList() {
   const navigate = useNavigate();
+  const { setActiveServer } = useAuth();
   // Usa directamente el ServerResponse en lugar de crear una interfaz duplicada
   const [servers, setServers] = useState<ServerResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +37,7 @@ export default function ServersList() {
       try {
         // Obtenemos los datos desde el backend
         const data: ServerResponse[] = await ServerService.getServers();
-        
+
         // Lo guardamos directamente en el estado
         setServers(data);
       } catch (error) {
@@ -33,25 +50,45 @@ export default function ServersList() {
     fetchServers();
   }, []);
 
+  const handleToggleServer = (serverId: string) => () => {
+    setActiveServer(servers.find((s) => s.id === serverId) || null);
+    navigate(`/servers/${serverId}`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "online": return <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full border border-green-500/20">En línea</span>;
-      case "offline": return <span className="text-xs bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">Apagado</span>;
-      case "starting": return <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/20">Iniciando...</span>;
-      default: return null;
+      case "online":
+        return (
+          <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full border border-green-500/20">
+            En línea
+          </span>
+        );
+      case "offline":
+        return (
+          <span className="text-xs bg-red-500/10 text-red-500 px-2 py-0.5 rounded-full border border-red-500/20">
+            Apagado
+          </span>
+        );
+      case "starting":
+        return (
+          <span className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full border border-yellow-500/20">
+            Iniciando...
+          </span>
+        );
+      default:
+        return null;
     }
   };
 
-return (
+  return (
     <div className="flex flex-col h-full w-full p-6 animate-in fade-in duration-300">
-      
       {/* HEADER SIEMPRE VISIBLE */}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Red de Servidores</h1>
           <p className="text-sm text-muted-foreground mt-1">Servidores vinculados a tu cuenta.</p>
         </div>
-        
+
         {servers.length > 0 && !isLoading && (
           <Button onClick={() => setIsModalOpen(true)} variant="default" className="flex gap-2">
             <Plus className="w-4 h-4" /> Desplegar Nuevo
@@ -75,9 +112,14 @@ return (
           </div>
           <h2 className="text-2xl font-bold mb-3 text-foreground">Aún no tienes servidores</h2>
           <p className="text-muted-foreground max-w-md mb-8">
-            Parece que eres nuevo por aquí. Empieza desplegando tu primer servidor de Minecraft o pide a un amigo que te invite al suyo.
+            Parece que eres nuevo por aquí. Empieza desplegando tu primer servidor de Minecraft o
+            pide a un amigo que te invite al suyo.
           </p>
-          <Button size="lg" onClick={() => setIsModalOpen(true)} className="font-bold tracking-wide text-md px-8 py-6 h-auto">
+          <Button
+            size="lg"
+            onClick={() => setIsModalOpen(true)}
+            className="font-bold tracking-wide text-md px-8 py-6 h-auto"
+          >
             <Plus className="w-5 h-5 mr-2" />
             Crear mi primer servidor
           </Button>
@@ -94,21 +136,25 @@ return (
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
                       <CardTitle className="text-xl font-semibold">{server.name}</CardTitle>
-                      
+
                       {/* ETIQUETA DINÁMICA DE ROL */}
-                      <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
-                        server.role === 'OWNER' 
-                          ? 'bg-primary/20 text-primary' 
-                          : 'bg-blue-500/20 text-blue-500'
-                      }`}>
-                        {server.role === 'OWNER' ? 'Dueño' : 'Invitado'}
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+                          server.role === "OWNER"
+                            ? "bg-primary/20 text-primary"
+                            : "bg-blue-500/20 text-blue-500"
+                        }`}
+                      >
+                        {server.role === "OWNER" ? "Dueño" : "Invitado"}
                       </span>
                     </div>
-                    
+
                     <CardDescription className="flex flex-col gap-1">
                       {/* Usamos server.nodeId para coincidir con el backend */}
-                      <span className="flex items-center gap-1"><Activity className="w-3.5 h-3.5" /> Nodo: {server.nodeId}</span>
-                      {server.role === 'GUEST' && (
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-3.5 h-3.5" /> Nodo: Default-Node
+                      </span>
+                      {server.role === "GUEST" && (
                         <span className="flex items-center gap-1 text-blue-400/80">
                           <Users className="w-3.5 h-3.5" /> De: {server.ownerName}
                         </span>
@@ -121,17 +167,25 @@ return (
               <CardContent className="flex-1">
                 <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-3 rounded-md border">
                   <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground flex gap-1.5"><HardDrive className="w-3.5 h-3.5" /> RAM</span>
+                    <span className="text-muted-foreground flex gap-1.5">
+                      <HardDrive className="w-3.5 h-3.5" /> RAM
+                    </span>
                     <span className="font-medium">{server.memory}</span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground flex gap-1.5"><Activity className="w-3.5 h-3.5" /> Puerto</span>
+                    <span className="text-muted-foreground flex gap-1.5">
+                      <Activity className="w-3.5 h-3.5" /> Puerto
+                    </span>
                     <span className="font-mono">{server.port}</span>
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="pt-4 border-t">
-                <Button onClick={() => navigate(`/servers/${server.id}`)} className="w-full font-medium" variant={server.status === 'online' ? 'default' : 'secondary'}>
+                <Button
+                  onClick={handleToggleServer(server.id)}
+                  className="w-full font-medium"
+                  variant={server.status === "online" ? "default" : "secondary"}
+                >
                   Administrar <Play className="w-4 h-4 ml-2" />
                 </Button>
               </CardFooter>
