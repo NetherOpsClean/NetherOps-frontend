@@ -6,5 +6,6 @@ export interface ServerResponse {
   nodeId: string;
   memory: string;
   port: number;
-  ownerName?: string; // Es opcional porque el OWNER principal no necesita este campo
+  ipAddress?: string;
+  ownerName?: string;
 }

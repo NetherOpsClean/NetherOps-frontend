@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { type ServerResponse } from "@/types/response/ServerResponse";
 
 export interface User {
-  id: string;      
-  email: string;   
+  id: string;
+  email: string;
   role: string;
   name: string;
 }
@@ -11,6 +12,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   role: string | null;
   user: User | null; // <-- ¡Añadimos el usuario aquí!
+  activeServer: ServerResponse | null;
+  setActiveServer: (server: ServerResponse | null) => void;
   login: (token: string) => void;
   logout: () => void;
 }
@@ -18,7 +21,7 @@ interface AuthContextType {
 // Función mejorada para extraer todo el usuario del token
 const getUserFromToken = (token: string): User | null => {
   try {
-    const base64Url = token.split(".")[1]; 
+    const base64Url = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = decodeURIComponent(
       window
@@ -29,13 +32,13 @@ const getUserFromToken = (token: string): User | null => {
     );
 
     const payload = JSON.parse(jsonPayload);
-    
+
     // En NestJS, el ID suele venir en 'sub' (subject) o 'id'
     return {
       id: payload.sub || payload.id,
       email: payload.email || "",
       role: payload.role || "USER",
-      name: payload.name || "Admin" 
+      name: payload.name || "Admin",
     };
   } catch (error) {
     return null;
@@ -46,12 +49,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
-  
+
   // Guardamos el usuario completo en lugar de solo el rol
   const [user, setUser] = useState<User | null>(() => {
     const savedToken = localStorage.getItem("token");
     return savedToken ? getUserFromToken(savedToken) : null;
   });
+
+  const [activeServer, setActiveServer] = useState<ServerResponse | null>(null);
 
   const login = (newToken: string) => {
     localStorage.setItem("token", newToken);
@@ -69,13 +74,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     // Ahora pasamos el objeto 'user' en el Provider y derivamos el rol de ahí
-    <AuthContext.Provider value={{ 
-      isAuthenticated: !!token, 
-      role: user?.role || null, 
-      user, 
-      login, 
-      logout 
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated: !!token,
+        role: user?.role || null,
+        user,
+        login,
+        logout,
+        activeServer,
+        setActiveServer,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

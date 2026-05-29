@@ -2,10 +2,10 @@ import { Outlet } from "react-router";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useState, useEffect } from "react";
 import { ServerService } from "@/service/ServerService";
-// Importa tu servicio de obtener servidores aquí
+import type { ServerResponse } from "@/types/response/ServerResponse";
 
 export default function DashboardLayout() {
-  const [servers, setServers] = useState<any[]>([]);
+  const [servers, setServers] = useState<ServerResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -13,12 +13,11 @@ export default function DashboardLayout() {
     const fetchServers = async () => {
       try {
         const data = await ServerService.getServers();
-        if(data){
+        if (data) {
           setServers(data);
-        }else{
+        } else {
           setServers([]);
         }
-        
       } catch (e) {
         setServers([]);
       } finally {
@@ -32,7 +31,7 @@ export default function DashboardLayout() {
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Pasamos la lista de servidores al Sidebar */}
       <AppSidebar servers={servers} isLoading={isLoading} />
-      
+
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>
