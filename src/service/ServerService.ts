@@ -31,5 +31,14 @@ export const ServerService = {
     } catch (error) {
       throw error; 
     }
+  },
+
+  getServerPlayers: async (serverId: string): Promise<any> => {
+    try {
+      const response = await api.get(`/servers/${serverId}/users`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };

@@ -23,11 +23,8 @@ export function AppSidebar({ servers, isLoading }: SidebarProps) {
   const navItems = [
     { name: "Server", icon: Server, path: `/servers/${serverId}` },
     { name: "Console", icon: Terminal, path: `/servers/${serverId}/console` },
-    { name: "Log", icon: FileText, path: `/servers/${serverId}/log` },
     { name: "Access", icon: Users, path: `/servers/${serverId}/players` },
-    { name: "Software", icon: Cpu, path: `/servers/${serverId}/software` },
-    { name: "Files", icon: FolderOpen, path: `/servers/${serverId}/files` },
-    { name: "Settings", icon: Settings, path: `/servers/${serverId}/settings` },
+ 
   ];
 
   return (
