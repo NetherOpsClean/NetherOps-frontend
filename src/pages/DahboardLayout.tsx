@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useState, useEffect } from "react";
+import { ServerService } from "@/service/ServerService";
 // Importa tu servicio de obtener servidores aquí
 
 export default function DashboardLayout() {
@@ -11,9 +12,13 @@ export default function DashboardLayout() {
     // Aquí haces la llamada a tu API para obtener los servidores
     const fetchServers = async () => {
       try {
-        // const data = await getMyServers();
-        // setServers(data);
-        setServers([]); // Simula usuario sin servidores para probar
+        const data = await ServerService.getServers();
+        if(data){
+          setServers(data);
+        }else{
+          setServers([]);
+        }
+        
       } catch (e) {
         setServers([]);
       } finally {

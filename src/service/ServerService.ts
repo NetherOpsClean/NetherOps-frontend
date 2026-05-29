@@ -13,4 +13,14 @@ export const ServerService = {
       throw error; 
     }
   },
+
+  getServers: async (): Promise<any> => {
+    try {
+      const response = await api.get<ServerResponse>('/servers');
+      return response.data;
+    } catch (error) {
+      // Puedes manejar logs adicionales aquí si lo deseas
+      throw error; 
+    }
+  }
 };

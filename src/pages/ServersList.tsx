@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Server as ServerIcon, Activity, HardDrive, Play, Users, Plus, Loader2 } from "lucide-react";
 import { CreateServerModal } from "@/components/CreateServerModal";
+import { ServerService } from "@/service/ServerService";
 
 // Tu interfaz de datos
 interface ServerData {
@@ -28,15 +29,10 @@ export default function ServersList() {
     const fetchServers = async () => {
       setIsLoading(true);
       try {
-        // Simulamos una espera de red
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // MOCK: Aquí decides si es un usuario nuevo o viejo. 
-        // Para probar el estado vacío, deja este arreglo vacío [].
-        // Si quieres ver tarjetas, pon los datos falsos aquí.
+        const data = await ServerService.getServers();
         const dataFromBackend: ServerData[] = []; 
         
-        setServers(dataFromBackend);
+        setServers(data);
       } catch (error) {
         console.error(error);
       } finally {
